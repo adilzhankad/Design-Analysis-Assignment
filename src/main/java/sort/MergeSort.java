@@ -1,88 +1,47 @@
 package sort;
+
 import util.Metrics;
 
 public class MergeSort {
+    private static final int CUTOFF = 16; // если меньше → BubbleSort
 
-
-    private static void mergeSort(int[] arr, int l, int r) {
-
-        if(l<r){
-            int mid = (l+r)/2;
-            mergeSort(arr, l, mid);
-            mergeSort(arr, mid+1, r);
-
-            merge(arr, l, mid, r);
-        }
-
-
-
-
+    public static void sort(int[] arr, Metrics metrics) {
+        int[] buffer = new int[arr.length];
+        metrics.incAllocations(); // считаем одно выделение памяти
+        mergeSort(arr, buffer, 0, arr.length - 1, metrics);
     }
 
-    private static void merge(int[] arr, int l, int mid, int r) {
-        int n1 = mid - l + 1;
-        int n2 = r - mid;
-
-        int lArr[] = new int[n1];
-        int rArr[] = new int[n2];
-
-        for(int x=0; x<n1; x++){
-            lArr[x] = arr[l+x];
-        }
-        for(int x=0; x<n2; x++){
-            rArr[x] = arr[mid+1+x];
+    private static void mergeSort(int[] arr, int[] buffer, int l, int r, Metrics metrics) {
+        if (r - l + 1 <= CUTOFF) {
+            BubbleSort.sort(arr, l, r, metrics);
+            return;
         }
 
-        int i=0;
-        int j=0;
-        int k=l;
+        if (l < r) {
+            metrics.enterRecursion();
+            int mid = (l + r) / 2;
 
-        while (i<n1 && j<n2){
+            mergeSort(arr, buffer, l, mid, metrics);
+            mergeSort(arr, buffer, mid + 1, r, metrics);
+            merge(arr, buffer, l, mid, r, metrics);
 
-            if(lArr[i] <= rArr[j]){
-                arr[k] = lArr[i];
-                i++;
-
-            }
-            else {
-                arr[k] = rArr[j];
-                j++;
-            }
-            k++;
+            metrics.exitRecursion();
         }
-
-        while (i<n1){
-            arr[k] = lArr[i];
-            i++;
-            k++;
-
-        }
-
-        while (j<n2){
-            arr[k] = rArr[j];
-            j++;
-            k++;
-
-        }
-
     }
 
+    private static void merge(int[] arr, int[] buffer, int l, int mid, int r, Metrics metrics) {
+        System.arraycopy(arr, l, buffer, l, r - l + 1);
 
-    public static void main(String[] args){
-        int arr[]={3,5,17,4,6,2};
-
-        for(int n : arr){
-            System.out.print(n + " ");
+        int i = l, j = mid + 1, k = l;
+        while (i <= mid && j <= r) {
+            metrics.incComparisons();
+            if (buffer[i] <= buffer[j]) {
+                arr[k++] = buffer[i++];
+            } else {
+                arr[k++] = buffer[j++];
+            }
         }
-            System.out.println();
-
-        mergeSort(arr,0, arr.length-1);
-
-            System.out.println("after sorting");
-        for(int n : arr){
-            System.out.print(n + " ");
-        }
-
-
+        while (i <= mid) arr[k++] = buffer[i++];
+        while (j <= r) arr[k++] = buffer[j++];
     }
 }
